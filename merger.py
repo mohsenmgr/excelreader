@@ -1,6 +1,9 @@
 import pandas as pd
 import json
 
+
+excel_file = './Sachim09062023.xlsx'
+
 def get_total_rows(excel_file, sheet_name):
     df = pd.read_excel(excel_file,sheet_name=sheet_name)
     num_rows = df.shape[0]
@@ -61,8 +64,23 @@ def create_output_device_list(excel_dataframe_df):
     device_name_list.append((previous_value,row_number_start,row_number_end))
     return device_name_list
 
-
-excel_file = './Sachim09062023.xlsx'
+def check_static_data_for_sheet(sheet_name,excel_file_name=excel_file):
+    try:
+        plant_df = get_excel_dataframe(excel_file_name,sheet_name)
+        result = convert_df_to_json(plant_df)
+        sheetData = json.loads(result)
+        return sheetData
+    except:
+        return []
+    
+def check_column_header_against_result_column_header(input_column_headers, result_column_headers):
+    non_existant = []
+    for element in input_column_headers:
+        if element not in result_column_headers:
+            non_existant.append(element)
+    #result =  all(elem in input_column_headers  for elem in result_column_headers)
+    
+    return non_existant
 
 # Read and populate plant data (as json)
 sheet_name = 'Plant'
@@ -107,14 +125,26 @@ else:
 # combine the two tables data in a way that for each row on the first table
 # we repeat said row to the number of rows that exist on the 2nd table (So we get all the modbus registers for that modbus ID)
 
-def cutter(startIndex, endIndex, plantData, modbusData):
-    totalSize = (endIndex - startIndex + 1) * len(modbusData)
-    resultList = [{}] * totalSize
+def cutter(startIndex, endIndex, appendix_data ,plantData, modbusData):
+    size =  (endIndex - startIndex + 1) * len(modbusData)
+    total_size = size + len(appendix_data)
+    resultList = [{}] * total_size
 
+    main_index = 0
     j = 0
     k = startIndex - 2
 
-    for i in range(totalSize):
+    if(len(appendix_data) > 0):
+        appendix_columns = appendix_data[0].keys()
+        for i in range(len(appendix_data)):
+            resultList[i] = {'measure-id': i+1}
+            
+            for column in appendix_columns:
+                resultList[i][column] = appendix_data[i][column]
+
+            main_index += 1
+
+    for i in range(main_index,total_size):
 
         resultList[i] = {'measure-id': i+1}
         for modbusColumn in modbus_columns:
@@ -139,8 +169,16 @@ def cutter(startIndex, endIndex, plantData, modbusData):
 
 for item in device_list:
     updated_list = []
+    appendix_data = check_static_data_for_sheet(item[0])
+    if len(appendix_data):
+        #print(f"size: {data[0].keys()}")
+        res = check_column_header_against_result_column_header(appendix_data[0].keys(),column_names)
+        if(len(res) > 0):
+            print(f"different column name/s found in sheet {item[0]}, columns: {res}")
+            exit()
 
-    result = cutter(item[1],item[2],plantData,modbusData)
+
+    result = cutter(item[1],item[2],appendix_data,plantData,modbusData)
 
     for resultItem in result:
         ordered_obj = change_order(resultItem,column_names)
