@@ -96,7 +96,7 @@ column_names_custom = [ 'measure-id','modbus-fc' ,'modbus-id',	'modbus-address'	
                 ,'Descrizione Sottoquadro'	,'Linea'	,'Descrizione Linea'	,'Area Funzionale ENEA'	
                 ,'Cod. Funzionale TERA'	,'Tipologia Dispositivo'	,'Codice Modello Dispositivo'	,'Taglia Interruttore'
                 ,'Tipologia Misura'	,'Hostname Edge'	,'ID Modbus'
-                ,'Tipo Dispositivo'	,'Misura'	,'Unita di misura' ]
+                ,'Tipo Dispositivo'	,'Misura'	,'Unita di misura','group', 'ime-type' ]
 
 
 if modalita_auto is True:
